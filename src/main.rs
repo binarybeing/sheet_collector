@@ -177,11 +177,16 @@ async fn excel_core_data_lock (db:web::Data<sled::Db>, req: HttpRequest) -> impl
 #[get("/excel_core_data/{task_name}/{title_name}")]
 async fn excel_core_data (db:web::Data<sled::Db>, req: HttpRequest) -> impl Responder {
     if is_not_local_host(&req) {
-        return HttpResponse::Ok().body("no permission");
+        return HttpResponse::MethodNotAllowed().body("no permission");
     }
     let task_name_param = req.match_info().get("task_name").unwrap();
     let db = db.open_tree(task_name_param).unwrap();
-    return HttpResponse::Ok().json(loadJsonFromDb(&db,String::from("excel_core_data")));
+    let res = loadJsonFromDb(&db,String::from("excel_core_data"));
+    match res {
+        Some(val) =>  HttpResponse::Ok().json(val),
+        None => return HttpResponse::MethodNotAllowed().body("no permission")
+    }
+    
 }
 #[derive(Deserialize)]
 struct Info{
@@ -350,7 +355,7 @@ async fn main() -> std::io::Result<()>{
           .service(sync_excel_core_data)
           .service(show_excel)
           .route("/hey", web::get().to(manual_hello))
-          .service(afs::Files::new("/static", ".").show_files_listing())
+          .service(afs::Files::new("/static", "./resource/").show_files_listing())
       })
       .workers(4)
       .bind(host.as_str())?
@@ -380,15 +385,15 @@ static HTML_HEAD: &'static str = "<!doctype html><html lang=\"zh-CN\">
     <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">
     <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">
     <title>表单页面</title>
-    <link rel=\"stylesheet\" href=\"/static/resource/css/bootstrap.min.css\">
-    <link rel='stylesheet' href='/static/resource/css/xspreadsheet.css'>
+    <link rel=\"stylesheet\" href=\"/static/css/bootstrap.min.css\">
+    <link rel='stylesheet' href='/static/css/xspreadsheet.css'>
   </head>
   <body>";
 
-static HTML_TAIL: &'static str = "<script src=\"/static/resource/js/jquery.min.js\" ></script>
-<script src=\"/static/resource/js/bootstrap.min.js\" ></script>
-<script type=\"text/javascript\" src=\"/static/resource/js/zh-cn.js\"></script>
-<script src=\"/static/resource/js/xspreadsheet.js\"></script>
+static HTML_TAIL: &'static str = "<script src=\"/static/js/jquery.min.js\" ></script>
+<script src=\"/static/js/bootstrap.min.js\" ></script>
+<script type=\"text/javascript\" src=\"/static/js/zh-cn.js\"></script>
+<script src=\"/static/js/xspreadsheet.js\"></script>
 </body>
 </html>";
 

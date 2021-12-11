@@ -140,6 +140,9 @@ pub mod content{
         var core_data = fetchJson('/excel_core_data/'+ task_name+'/'+title_name );
         if(JSON.stringify(core_data) === '{}'){
           var data = fetchJson('/show_excel/'+ task_name+'/'+title_name); 
+          if(JSON.stringify(data) === '{}'){
+            return;
+          }
           var rows = target_data.rows;
           var row_data = rows.getData();
           row_data['0'] = {cells:buildHead(data.config.order_config)};
