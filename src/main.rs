@@ -2,6 +2,7 @@ use actix_cors::Cors;
 use actix_files as afs;
 use actix_web::{get,post,web,App,HttpResponse,HttpServer,Responder,HttpRequest};
 use std::fs;
+use std::env;
 use std::net::UdpSocket;
 use serde_json::{Result, Value};
 use std::io::prelude::*;
@@ -12,6 +13,7 @@ use std::collections::HashMap;
 use sled;
 use serde::{Deserialize, Serialize};
 mod table_page;
+
 
 
 #[post("/submit")]
@@ -106,7 +108,7 @@ fn do_submit(db :web::Data<sled::Db>, json_string :&str) -> Result<String> {
 
 #[get("/show/{task_name}/{title_name}")]
 async fn show(req: HttpRequest) -> impl Responder {
-    let mut task_name = String::from("../");
+    let mut task_name = String::from("./");
     let task_name_param = req.match_info().get("task_name").unwrap();
     task_name.push_str(task_name_param);
     task_name.push_str("/form_content.html");
@@ -199,7 +201,7 @@ async fn jump(req :HttpRequest) -> impl Responder {
 
 #[get("/")]
 async fn indexx(req :HttpRequest) -> impl Responder {
-    let file = File::open("../collect_task").unwrap();
+    let file = File::open("./collect_task").unwrap();
     let fin = BufReader::new(file);
     let mut content = String::from("");
     let is_not_local = is_not_local_host(&req);
@@ -229,7 +231,7 @@ async fn admin(req :HttpRequest) -> impl Responder {
     if is_not_local_host(&req) {
         return HttpResponse::Ok().body("无权限");
     }
-    let file = File::open("../collect_task").unwrap();
+    let file = File::open("./collect_task").unwrap();
     let fin = BufReader::new(file);
     let mut content = String::from("");
     for line in fin.lines() {
@@ -258,10 +260,11 @@ async fn main() -> std::io::Result<()>{
     let mut origin_host = String::from("http://");
     origin_host.push_str(host.as_str());
     println!("host={}  origin={}",host,origin_host);
-    wd_log::output_to_file("../server.log");
+    wd_log::output_to_file("./server.log");
     let mut map:HashMap<String, Value> = HashMap::new();
-    let mut sled_tree:sled::Db = sled::open("../.database").expect("open database error");
-    
+    let mut sled_tree:sled::Db = sled::open("./.database").expect("open database error");
+    let info = env::args();
+    println!("env info={:?}",info);
     HttpServer::new(move || {
         App::new()
           .wrap(
