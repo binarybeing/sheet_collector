@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>你好，</title>
+</head>
+<body>
+  <div id="wait_div">
+    <p><center style="font-size:40px">请稍等，如果长时间无反应请联系 @qqqq </center></p>
+    <div style="text-align:center">
+      <span id="point_1" style="font-size:80px;color:white">.</span>
+      <span id="point_2" style="font-size:80px;color:white">.</span>
+      <span id="point_3" style="font-size:80px;color:white">.</span>
+      <span id="point_4" style="font-size:80px;color:white">.</span>
+      <span id="point_5" style="font-size:80px;color:white">.</span>
+      <span id="point_6" style="font-size:80px;color:white">.</span>
+    </div>
+  </div>
+  <iframe id="web_frame" src="" hidden=true style="height:1000px; width:100%" frameborder=”no” border=”0″ marginwidth=”0″ marginheight=”0″ scrolling=”no” allowtransparency=”yes”></iframe>
+</body>
+<style type="text/css">
+  .full_screen{
+    height: 100%;
+    width: : 100%;
+}
+</style>
+<script>
+    var host_available;
+    var index = 0;
+
+    //找到 收集表单的管理员提供的服务地址
+    function get_host(){
+      var search = true;
+      //局域网内 临时收集表单服务 IP地址列表（管理员的提供服务地址池）
+      var local_host_arr=["172.16.233.59","172.16.233.60","172.16.233.61"]
+      var host = local_host_arr[index%local_host_arr.length];
+      url = "http://"+host+":14324/hey"
+      index=index+1;
+      var httpRequest = new XMLHttpRequest();
+      httpRequest.open('GET', url, true);
+      httpRequest.timeout = 1000;
+      //httpRequest.withCredentials = true;
+      httpRequest.onload = function(){
+        host_available = host+":14324";
+        console.log("host_available="+host_available);
+        search = false;
+      };
+      httpRequest.send();//第三步：发送请求  将请求参数写在URL中
+    }
+    window.onload = function(){
+      var point_show = setInterval(function(){
+        document.getElementById("point_"+count).style.color = "black";
+        count =count+1;
+        if(count == 7){
+           count = 1;
+           for (var i = 1; i < 7; i++) {
+             document.getElementById("point_"+i).style.color = "white";
+           }
+        }
+      }, 1000);
+
+      var interval = setInterval(function(){
+          get_host();
+          if(host_available){
+            console.log(host_available);
+            document.getElementById("web_frame").src = "http://"+host_available;
+            document.getElementById("wait_div").hidden = true;
+            document.getElementById("web_frame").hidden = false;
+            clearInterval(interval);
+            clearInterval(point_show);
+          }
+       }, 1000);
+       var count = 1;
+
+　　}
+</script>
+</html>
