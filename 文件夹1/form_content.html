@@ -1,0 +1,51 @@
+
+
+      <!-- 显示输入框 左边的lab -->
+      <label class='col-sm-2 control-label'>请输入姓名</label>
+      <div class='col-sm-10'>
+        <!-- name='input_name' 可被修改 -->
+        <input class='form-control' name='your_name'></input>
+      </div>
+
+      <label class='col-sm-2 control-label' >请选择性别</label>
+      <div class='radio col-sm-10'>
+        <label class='radio-inline'>
+          <input type='radio' name='your_gender' value='男'> 男
+        </label>
+        <label class='radio-inline'>
+          <input type='radio' name='your_gender' value='女'> 女
+        </label>
+      </div>
+
+      <label class='col-sm-2 control-label'>上班地点</label>
+      <div class='select col-sm-10'>
+        <select class='form-control' name='place'>
+            <option>望京</option>
+            <option>西二旗</option>
+            <option>玺萌大厦</option>
+        </select>
+      </div>
+
+      <label class='col-sm-2 control-label'>选择礼物（可多选）</label>
+      <div class='checkbox col-sm-10'>
+        <label>
+          <input type='checkbox' name='gift' value='苹果'>苹果</input>
+        </label>
+        <label>
+          <input type='checkbox' name='gift' value='华为'>华为</input>
+        </label>
+        <label>
+          <input type='checkbox' name='gift' value='小米'>小米</input>
+        </label>
+      </div>
+
+      <label class='col-sm-2 control-label'>近期工作</label>
+      <div class='textarea col-sm-10'>
+          <textarea class='form-control' name='work_content' rows='10' ></textarea>
+      </div>
+      <script type='text/javascript'>
+        function check(form_obj) {
+            //后面可以自己加一些简单的js，校验输入参数
+            return true;
+        }
+      </script>
