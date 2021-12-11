@@ -132,6 +132,89 @@ struct TableObj {
     rows: Value,
     config:Value
 }
+#[derive(Serialize, Deserialize)]
+struct Lock{
+    load_time:u64
+}
+#[get("/excel_core_data_lock/{task_name}/{load_time}")]
+async fn excel_core_data_lock (db:web::Data<sled::Db>, req: HttpRequest) -> impl Responder {
+    
+    if is_not_local_host(&req) {
+        
+        return HttpResponse::MethodNotAllowed().body("no permission");
+    }
+
+    let task_name = req.match_info().get("task_name").unwrap();
+    let load_time = req.match_info().get("load_time").unwrap();
+    let load_time = load_time.parse::<u64>().unwrap();
+    let db = db.open_tree(task_name).unwrap();
+    let lock = loadJsonFromDb(&db,String::from("excel_core_data_lock"));
+    match lock {
+        Some(lock)=>{
+            
+            let obj = lock.as_object().unwrap();
+            let old_load_time = obj.get("load_time").unwrap().as_u64().unwrap();
+            if load_time >= old_load_time {
+                let l = Lock{
+                    load_time:load_time
+                };
+                db.insert("excel_core_data_lock", serde_json::to_string(&l).unwrap().as_bytes());
+                HttpResponse::Ok().body("success")
+            }else{
+                
+                HttpResponse::Forbidden().body("fail")
+            }
+        },
+        _=> {
+            let l = Lock{
+                load_time:load_time
+            };
+            db.insert("excel_core_data_lock", serde_json::to_string(&l).unwrap().as_bytes());
+            HttpResponse::Ok().body("success")
+        }
+    }
+}
+#[get("/excel_core_data/{task_name}/{title_name}")]
+async fn excel_core_data (db:web::Data<sled::Db>, req: HttpRequest) -> impl Responder {
+    if is_not_local_host(&req) {
+        return HttpResponse::Ok().body("no permission");
+    }
+    let task_name_param = req.match_info().get("task_name").unwrap();
+    let db = db.open_tree(task_name_param).unwrap();
+    return HttpResponse::Ok().json(loadJsonFromDb(&db,String::from("excel_core_data")));
+}
+#[derive(Deserialize)]
+struct Info{
+    new_value:String,
+    old_value:String
+}
+#[post("/sync_excel_core_data/{task_name}")]
+async fn sync_excel_core_data (db:web::Data<sled::Db>, req: HttpRequest, req_body:String) -> impl Responder {
+    if is_not_local_host(&req) {
+        return HttpResponse::Ok().body("no permission");
+    }
+    let task_name_param = req.match_info().get("task_name").unwrap();
+    let db = db.open_tree(task_name_param).unwrap();
+    let res = db.insert("excel_core_data", req_body.as_str());
+    //println!("sync_excel_core_data res ={:?} new value={}",res,info.new_value);
+    return HttpResponse::Ok().body("success");
+}
+
+fn loadJsonFromDb(db:& sled::Tree, key:String) -> Option<Value>{
+    let a = match db.get(key.as_bytes()).unwrap(){
+        Some(v) => {
+            //println!("v={:?}",v);
+            String::from(std::str::from_utf8(v.as_ref()).unwrap())
+        },
+        _=> String::from("")
+    };
+    //println!("loadJsonFromDb {}",a);
+    match serde_json::from_str(a.as_str()){
+        Ok(obj)=> Some(obj),
+        _=> None
+    }
+    
+}
 
 #[get("/show_excel/{task_name}/{title_name}")]
 async fn show_excel(db:web::Data<sled::Db>, req: HttpRequest) -> impl Responder {
@@ -142,34 +225,9 @@ async fn show_excel(db:web::Data<sled::Db>, req: HttpRequest) -> impl Responder 
     let task_name_param = req.match_info().get("task_name").unwrap();
     println!("show excel task name={}",task_name_param);
     let db = db.open_tree(task_name_param).unwrap();
-    //println!("vv={:?}", json_obj);
-    // let json = match serde_json::from_str(a){
-    //     Ok(obj)=> obj,
-    //     _=> panic!("")
-    // };
-    //let a = match String::from(std::str::from_utf8(db.get(task_name_param.as_bytes()).unwrap())) {
-    let a = match db.get(task_name_param.as_bytes()).unwrap(){
-        Some(v) => {
-            //println!("v={:?}",v);
-            String::from(std::str::from_utf8(v.as_ref()).unwrap())
-        },
-        _=> String::from("[]")
-    };
-    let json = match serde_json::from_str(a.as_str()){
-        Ok(obj)=> obj,
-        _=> panic!("")
-    };
-
-    let a = match db.get("table_config").unwrap(){
-        Some(v) => {
-            String::from(std::str::from_utf8(v.as_ref()).unwrap())
-        },
-        _=> String::from("[]")
-    };
-    let config_json = match serde_json::from_str(a.as_str()){
-        Ok(obj)=> obj,
-        _=> panic!("")
-    };
+    
+    let json = loadJsonFromDb(&db,String::from(task_name_param)).unwrap();
+    let config_json = loadJsonFromDb(&db,String::from("table_config")).unwrap();
     let res = TableObj{
         name:String::from(task_name_param),
         rows:json,
@@ -287,9 +345,12 @@ async fn main() -> std::io::Result<()>{
           .service(indexx)
           .service(admin)
           .service(jump)
+          .service(excel_core_data)
+          .service(excel_core_data_lock)
+          .service(sync_excel_core_data)
           .service(show_excel)
           .route("/hey", web::get().to(manual_hello))
-          .service(afs::Files::new("/resource", ".").show_files_listing())
+          .service(afs::Files::new("/static", ".").show_files_listing())
       })
       .workers(4)
       .bind(host.as_str())?
@@ -319,15 +380,15 @@ static HTML_HEAD: &'static str = "<!doctype html><html lang=\"zh-CN\">
     <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">
     <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">
     <title>表单页面</title>
-    <link rel=\"stylesheet\" href=\"https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css\" integrity=\"sha384-HSMxcRTRxnN+Bdg0JdbxYKrThecOKuH5zCYotlSAcp1+c8xmyTe9GYg1l9a69psu\" crossorigin=\"anonymous\">
-    <link rel='stylesheet' href='https://unpkg.com/x-data-spreadsheet@1.1.9/dist/xspreadsheet.css'>
+    <link rel=\"stylesheet\" href=\"/static/resource/css/bootstrap.min.css\">
+    <link rel='stylesheet' href='/static/resource/css/xspreadsheet.css'>
   </head>
   <body>";
 
-static HTML_TAIL: &'static str = "<script src=\"https://cdn.jsdelivr.net/npm/jquery@1.12.4/dist/jquery.min.js\" integrity=\"sha384-nvAa0+6Qg9clwYCGGPpDQLVpLNn0fRaROjHqs13t4Ggj3Ez50XnGQqc/r8MhnRDZ\" crossorigin=\"anonymous\"></script>
-<script src=\"https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js\" integrity=\"sha384-aJ21OjlMXNL5UyIl/XNwTMqvzeRMZH2w8c5cRVpzpU8Y5bApTppSuUkhZXN0VxHd\" crossorigin=\"anonymous\"></script>
-<script type=\"text/javascript\" src=\"https://unpkg.com/x-data-spreadsheet@1.0.20/dist/locale/zh-cn.js\"></script>
-<script src=\"https://unpkg.com/x-data-spreadsheet@1.1.9/dist/xspreadsheet.js\"></script>
+static HTML_TAIL: &'static str = "<script src=\"/static/resource/js/jquery.min.js\" ></script>
+<script src=\"/static/resource/js/bootstrap.min.js\" ></script>
+<script type=\"text/javascript\" src=\"/static/resource/js/zh-cn.js\"></script>
+<script src=\"/static/resource/js/xspreadsheet.js\"></script>
 </body>
 </html>";
 

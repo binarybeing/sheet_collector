@@ -1,12 +1,60 @@
 
 
       <!-- 显示输入框 左边的lab -->
-      <label class='col-sm-2 control-label'>请输入姓名</label>
+      <label class='col-sm-2 control-label'>部门</label>
+      <div class='col-sm-10'>
+        <!-- name='input_name' 可被修改 -->
+        <input class='form-control' name='dep'></input>
+      </div>
+
+      <label class='col-sm-2 control-label'>姓名</label>
       <div class='col-sm-10'>
         <!-- name='input_name' 可被修改 -->
         <input class='form-control' name='your_name'></input>
       </div>
 
+      <label class='col-sm-2 control-label'>身份证号</label>
+      <div class='col-sm-10'>
+        <!-- name='input_name' 可被修改 -->
+        <input class='form-control' name='cert'></input>
+      </div>
+
+      <label class='col-sm-2 control-label'>开始时间</label>
+      <div class='col-sm-10'>
+        <!-- name='input_name' 可被修改 -->
+        <input class='form-control' type='date' name='s_time'></input>
+      </div>
+
+
+      <label class='col-sm-2 control-label'>结束时间</label>
+      <div class='col-sm-10'>
+        <!-- name='input_name' 可被修改 -->
+        <input class='form-control' type='date' name='e_time'></input>
+      </div>
+      <label class='col-sm-2 control-label'>工作经验类型</label>
+      <div class='select col-sm-10'>
+        <select class='form-control' name='exper'>
+            <option>本行</option>
+            <option>他行</option>
+            <option>其他</option>
+        </select>
+      </div>
+
+      <label class='col-sm-2 control-label'>工作单位</label>
+      <div class='col-sm-10'>
+        <!-- name='input_name' 可被修改 -->
+        <input class='form-control' type='date' name='comp'></input>
+      </div>
+      <label class='col-sm-2 control-label'>岗位</label>
+      <div class='col-sm-10'>
+        <!-- name='input_name' 可被修改 -->
+        <input class='form-control' type='date' name='job'></input>
+      </div>
+      <label class='col-sm-2 control-label'>备注</label>
+      <div class='textarea col-sm-10'>
+          <textarea class='form-control' name='beizu' rows='10' ></textarea>
+      </div>
+<!--
       <label class='col-sm-2 control-label' >请选择性别</label>
       <div class='radio col-sm-10'>
         <label class='radio-inline'>
@@ -42,7 +90,7 @@
       <label class='col-sm-2 control-label'>近期工作</label>
       <div class='textarea col-sm-10'>
           <textarea class='form-control' name='work_content' rows='10' ></textarea>
-      </div>
+      </div> -->
       <script type='text/javascript'>
         function check(form_obj) {
             //后面可以自己加一些简单的js，校验输入参数

@@ -32,7 +32,7 @@
     function get_host(){
       var search = true;
       //局域网内 临时收集表单服务 IP地址列表（管理员的提供服务地址池）
-      var local_host_arr=["172.16.233.59","172.16.233.60","172.16.233.61"]
+      var local_host_arr=["172.20.10.9","172.16.233.60","172.16.233.61"]
       var host = local_host_arr[index%local_host_arr.length];
       url = "http://"+host+":14324/hey"
       index=index+1;
