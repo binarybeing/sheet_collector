@@ -13,6 +13,7 @@ use std::collections::HashMap;
 use sled;
 use serde::{Deserialize, Serialize};
 mod table_page;
+use pnet::datalink;
 
 
 
@@ -318,8 +319,9 @@ async fn manual_hello() -> impl Responder{
 
 #[actix_rt::main]
 async fn main() -> std::io::Result<()>{
+    //println!("host={}",Some(socket.local_addr().unwrap().ip().to_string()).unwrap());
     let mut host = get_host().unwrap();
-    host.push_str(":14324");
+    host.push_str(":14325");
     let mut origin_host = String::from("http://");
     origin_host.push_str(host.as_str());
     println!("host={}  origin={}",host,origin_host);
@@ -356,6 +358,7 @@ async fn main() -> std::io::Result<()>{
           .service(show_excel)
           .route("/hey", web::get().to(manual_hello))
           .service(afs::Files::new("/static", "./resource/").show_files_listing())
+          .service(afs::Files::new("/files", "./sync_files/").show_files_listing())
       })
       .workers(4)
       .bind(host.as_str())?
@@ -363,20 +366,31 @@ async fn main() -> std::io::Result<()>{
       .await
 }
 pub fn get_host() -> Option<String> {
-    let socket = match UdpSocket::bind("0.0.0.0:0") {
-        Ok(s) => s,
-        Err(_) => return None,
-    };
+    for iface in datalink::interfaces(){
+        for ip in iface.ips {
+            let ip = ip.ip().to_string();
+            if ip.starts_with("172.") || ip.starts_with("168.") || ip.starts_with("10."){
+                println!("your local ip is {}",ip);
+                return Some(ip)
+            }
+        }
+    }
+    None
 
-    match socket.connect("8.8.8.8:80") {
-        Ok(()) => (),
-        Err(_) => return None,
-    };
+    // let socket = match UdpSocket::bind("0.0.0.0:0") {
+    //     Ok(s) => s,
+    //     Err(_) => return None,
+    // };
 
-    match socket.local_addr() {
-        Ok(addr) => return Some(addr.ip().to_string()),
-        Err(_) => return None,
-    };
+    // match socket.connect("114.114.114.114:80") {
+    //     Ok(()) => (),
+    //     Err(_) => return None,
+    // };
+
+    // match socket.local_addr() {
+    //     Ok(addr) => return Some(addr.ip().to_string()),
+    //     Err(_) => return None,
+    // };
    }
 
 static HTML_HEAD: &'static str = "<!doctype html><html lang=\"zh-CN\">
